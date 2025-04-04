@@ -1,0 +1,13 @@
+nmap
+python-nmap
+scikit-learn
+pandas
+flask
+requests
+joblib
+matplotlib  
+colorama
+
+
+
+"beautifulsoup4" 

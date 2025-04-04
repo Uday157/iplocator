@@ -1,0 +1,83 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Security Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex justify-center items-center h-screen">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-96">
+        <h1 class="text-2xl font-bold text-center mb-4">IoT Security Scanner</h1>
+
+        <!-- Toggle for IPv4, IPv6, & Domain -->
+        <div class="flex justify-center mb-4 space-x-4">
+            <label class="inline-flex items-center">
+                <input type="radio" name="target_type" value="ip" checked class="form-radio text-blue-500" onclick="toggleInput('ip')">
+                <span class="ml-2 text-gray-700">IPv4 / IPv6</span>
+            </label>
+            <label class="inline-flex items-center">
+                <input type="radio" name="target_type" value="domain" class="form-radio text-blue-500" onclick="toggleInput('domain')">
+                <span class="ml-2 text-gray-700">Domain</span>
+            </label>
+        </div>
+
+        <!-- Scan Form -->
+        <form action="/scan" method="POST" class="space-y-4" onsubmit="startLoading()">
+            <label for="target" class="block text-gray-700 font-semibold">Enter Target:</label>
+            <input type="text" id="target" name="target" required 
+                   placeholder="Enter IP or Domain..."
+                   class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+
+            <button type="submit" 
+                    class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+                Scan Now
+            </button>
+        </form>
+
+        <!-- Loading Spinner (Hidden by Default) -->
+        <div id="loading" class="hidden text-center mt-4">
+            <svg class="animate-spin h-6 w-6 mx-auto text-blue-500" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0a12 12 0 00-12 12h4z"></path>
+            </svg>
+            <p class="text-gray-700 mt-2">Scanning... Please wait.</p>
+        </div>
+
+        <!-- Download Report Button (Hidden Initially) -->
+        <button id="downloadBtn" onclick="downloadReport()" 
+                class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 mt-4 hidden">
+            Download Report
+        </button>
+    </div>
+
+    <script>
+        function toggleInput(type) {
+            const targetInput = document.getElementById('target');
+            targetInput.placeholder = type === 'ip' 
+                ? "Enter IPv4/IPv6 (e.g., 192.168.1.1 or 2001:db8::1)"
+                : "Enter Domain (e.g., example.com)";
+        }
+
+        function startLoading() {
+            document.getElementById("loading").classList.remove("hidden");
+        }
+
+        function downloadReport() {
+            window.location.href = "/download_report";
+        }
+
+        // Show the Download button after scanning
+        window.onload = function () {
+            fetch("/download_report", { method: "HEAD" }).then(response => {
+                if (response.ok) {
+                    document.getElementById("downloadBtn").classList.remove("hidden");
+                }
+            });
+        };
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen p-4">
+
+    <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg w-full max-w-3xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">🔍 Scan Results</h1>
+
+        <!-- 🎯 Target Information -->
+        <p class="text-gray-700"><strong>🎯 Target IP:</strong> {{ ip }}</p>
+
+        <!-- 📌 Device Information -->
+        <h2 class="text-xl font-semibold mt-4 text-blue-700">📌 Device Information:</h2>
+        <p class="text-gray-700"><strong>📟 Detected Device Type:</strong> {{ device_type }}</p>
+        <p class="text-gray-700"><strong>🔗 MAC Address:</strong> {{ mac_address }}</p>
+        <p class="text-gray-700"><strong>💻 Operating System:</strong> {{ os_info }}</p>
+
+        <!-- 🌍 Geolocation Section -->
+        <h2 class="text-xl font-semibold mt-4 text-blue-700">📍 Geolocation Information:</h2>
+        <p class="text-gray-700"><strong>🌎 Country:</strong> {{ country }}</p>
+        <p class="text-gray-700"><strong>🏙️ City:</strong> {{ city }}</p>
+        <p class="text-gray-700"><strong>📡 ISP:</strong> {{ isp }}</p>
+
+        <!-- 🗺️ Map Display -->
+        {% if latitude and longitude %}
+            <h2 class="text-xl font-semibold mt-4 text-blue-700">🗺️ Device Location:</h2>
+            <div id="map" class="w-full h-64 rounded-md border"></div>
+        {% else %}
+            <p class="text-red-600 mt-2">⚠️ Location not available for private IPs.</p>
+        {% endif %}
+
+        <!-- 📡 Open Ports -->
+        <h2 class="text-xl font-semibold mt-4 text-blue-700">📡 Open Ports:</h2>
+        {% if open_ports %}
+            <ul class="list-disc list-inside pl-4 bg-gray-100 p-3 rounded-md">
+                {% for port in open_ports %}
+                    <li class="text-gray-700">{{ port }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-green-600 mt-2">✅ No open ports detected.</p>
+        {% endif %}
+
+        <!-- ⚙️ Services -->
+        <h2 class="text-xl font-semibold mt-4 text-blue-700">⚙️ Detected Services:</h2>
+        {% if services %}
+            <ul class="list-disc list-inside pl-4 bg-gray-100 p-3 rounded-md">
+                {% for service in services %}
+                    <li class="text-gray-700">{{ service }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-green-600 mt-2">✅ No services detected.</p>
+        {% endif %}
+
+        <!-- ⚠️ Risk Level -->
+        <h2 class="text-xl font-semibold mt-4 text-blue-700">⚠️ AI Predicted Risk Level:</h2>
+        <p class="text-lg font-bold p-3 rounded-md 
+            {% if risk_level == 'High' %} bg-red-500 text-white 
+            {% elif risk_level == 'Medium' %} bg-yellow-500 text-gray-900 
+            {% else %} bg-green-500 text-white {% endif %}">
+            {{ risk_level }}
+        </p>
+
+        <!-- 🕵️ Formatted CVEs by Port and Service -->
+        <h2 class="text-xl font-semibold mt-6 text-blue-700">🕵️ Vulnerabilities by Port and Service:</h2>
+        <div class="bg-gray-100 p-4 rounded-md mt-2">
+            {% for item in port_service_vulns %}
+                <p class="font-semibold text-gray-800">🔌 PORT: {{ item.port }}, SERVICE: {{ item.service }}</p>
+                {% if item.cves %}
+                    <ul class="list-disc pl-5 text-red-600">
+                        {% for cve in item.cves %}
+                            <li>{{ cve }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-green-600">FOUND CVEs: OK</p>
+                {% endif %}
+                <hr class="my-2 border-gray-400">
+            {% endfor %}
+        </div>
+
+        <!-- 🛑 Vulnerability Report -->
+        <h2 class="text-xl font-semibold mt-6 text-blue-700">🛑 Vulnerability Report:</h2>
+        {% if vulnerabilities %}
+            <div class="overflow-x-auto mt-2">
+                <table class="min-w-full border border-gray-300 bg-white shadow-md rounded-lg">
+                    <thead class="bg-gray-200 text-gray-700">
+                        <tr>
+                            <th class="border px-4 py-2">Product</th>
+                            <th class="border px-4 py-2">CWE</th>
+                            <th class="border px-4 py-2">CVE</th>
+                            <th class="border px-4 py-2">Severity</th>
+                            <th class="border px-4 py-2">CVSS Score</th>
+                            <th class="border px-4 py-2">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vuln in vulnerabilities %}
+                        <tr class="bg-gray-50 hover:bg-gray-100">
+                            <td class="border px-4 py-2">{{ vuln.product }}</td>
+                            <td class="border px-4 py-2">{{ vuln.cwe }}</td>
+                            <td class="border px-4 py-2">
+                                <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name={{ vuln.cve }}" class="text-blue-500 underline" target="_blank">{{ vuln.cve }}</a>
+                            </td>
+                            <td class="border px-4 py-2">{{ vuln.severity }}</td>
+                            <td class="border px-4 py-2 font-semibold text-red-600">{{ vuln.cvss_score }}</td>
+                            <td class="border px-4 py-2">{{ vuln.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-green-600 mt-2">✅ No known vulnerabilities found.</p>
+        {% endif %}
+
+        <!-- 🔄 Back Button -->
+        <a href="/" class="mt-6 block text-center text-blue-600 underline font-semibold">🔄 Scan Another IP</a>
+    </div>
+
+    <!-- Load Leaflet.js -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    {% if latitude and longitude %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("Latitude: {{ latitude }}, Longitude: {{ longitude }}"); // Debugging
+            var map = L.map('map').setView([{{latitude}}, {{longitude}}], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([{{ latitude }}, {{ longitude }}]).addTo(map)
+                .bindPopup("📍 Detected Location: {{ city }}, {{ country }}")
+                .openPopup();
+        });
+    </script>    
+    {% endif %}
+
+</body>
+</html>
